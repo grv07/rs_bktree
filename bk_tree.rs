@@ -1,24 +1,67 @@
 mod lvd;
 
 use std::collections::HashMap;
+use std::io::{Read, Write};
 
-const MAX_D: usize = 3;
+const DEFAUTL_D: usize = 2;
 
 fn main() {
+    let mut file_name = None;
+    let mut distance = DEFAUTL_D;
+    let mut args = std::env::args().into_iter();
+    args.next();
+
+    if let Some(flag) = args.next() {
+        if flag == "-f" {
+            // println!("find -f");
+            file_name = args.next();
+        }
+
+        if flag == "-d" {
+            distance = args
+                .next()
+                .map_or(DEFAUTL_D, |x| x.parse::<usize>().unwrap_or(DEFAUTL_D));
+        }
+    }
+
+    let words = if let Some(f) = file_name {
+        let words = std::fs::read_to_string(f).unwrap();
+        let words = words
+            .split('\n')
+            .map(|w| w.trim().to_lowercase())
+            .collect::<Vec<String>>();
+        words
+    } else {
+        vec![
+            "book".into(),
+            "books".into(),
+            "earth".into(),
+            "what".into(),
+            "water".into(),
+            "wavy".into(),
+        ]
+    };
+
     let mut bkt = BkTree::new("cook");
 
-    bkt.insert("book");
-    bkt.insert("books");
-    bkt.insert("earth");
-    bkt.insert("what");
-    bkt.insert("water");
-    bkt.insert("wavy");
+    for word in words {
+        bkt.insert(&word);
+    }
 
-    bkt.dump();
+    print!(" > ");
 
-    let query = "wavy";
-    println!("Search for: {}", query);
-    bkt.search(query);
+    let _ = std::io::stdout().flush();
+    for query in std::io::stdin().lines() {
+        if let Ok(query) = query {
+            if query == "exit" {
+                std::process::exit(0x0100);
+            }
+            println!("Search for: {} with {distance}", query);
+            bkt.search(&query, distance);
+        }
+        print!(" > ");
+        let _ = std::io::stdout().flush();
+    }
 }
 
 #[derive(Debug, Default)]
@@ -61,22 +104,23 @@ impl Node {
         }
     }
 
-    fn search(&self, word: &str) {
-        println!("Try with {}", self.v);
+    fn search(&self, word: &str, distance: usize) {
         let d = lvd::lev(&self.v, word);
 
-        if d < MAX_D {
+        if d <= distance {
             println!("{}", self.v);
         }
 
-        let range = (d.abs_diff(MAX_D), d + MAX_D);
+        let range = (d.abs_diff(distance), d + distance);
+
+        // println!("{:?}", range);
 
         for (_, child) in self
             .childs
             .iter()
             .filter(|(k, _)| *k > &range.0 && *k < &range.1)
         {
-            child.search(word);
+            child.search(word, distance);
         }
     }
 }
@@ -93,11 +137,12 @@ impl BkTree {
     }
 
     fn insert(&mut self, word: &str) {
+        println!("Adding {word} ..");
         self.root.insert(word);
     }
 
-    fn search(&self, word: &str) {
-        self.root.search(word);
+    fn search(&self, word: &str, d: usize) {
+        self.root.search(word, d);
     }
 
     fn dump(&self) {

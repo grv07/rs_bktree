@@ -108,13 +108,10 @@ impl Node {
         let d = lvd::lev(&self.v, word);
 
         if d <= distance {
-            println!("{}", self.v);
+            println!("Result: {}", self.v);
         }
 
         let range = (d.abs_diff(distance), d + distance);
-
-        // println!("{:?}", range);
-
         for (_, child) in self
             .childs
             .iter()

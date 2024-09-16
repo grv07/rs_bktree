@@ -1,24 +1,22 @@
 mod lvd;
 
 use std::collections::HashMap;
-use std::io::{Read, Write};
+use std::io::Write;
 
 const DEFAUTL_D: usize = 2;
 
 fn main() {
     let mut file_name = None;
-    let mut distance = DEFAUTL_D;
+    let mut d = DEFAUTL_D;
     let mut args = std::env::args().into_iter();
-    args.next();
 
-    if let Some(flag) = args.next() {
+    while let Some(flag) = args.next() {
         if flag == "-f" {
-            // println!("find -f");
             file_name = args.next();
         }
 
         if flag == "-d" {
-            distance = args
+            d = args
                 .next()
                 .map_or(DEFAUTL_D, |x| x.parse::<usize>().unwrap_or(DEFAUTL_D));
         }
@@ -56,7 +54,9 @@ fn main() {
             if query == "exit" {
                 std::process::exit(0x0100);
             }
-            println!("Search for: {} with {distance}", query);
+
+            println!("Searching for: {} with distance {d}", query);
+
             bkt.search(&query, distance);
         }
         print!(" > ");
@@ -88,6 +88,7 @@ impl Node {
         }
     }
 
+    #[allow(dead_code)]
     fn dump(&self, d: &usize, level: usize) {
         for _ in 0..level * 4 {
             print!(" ");
@@ -108,7 +109,7 @@ impl Node {
         let d = lvd::lev(&self.v, word);
 
         if d <= distance {
-            println!("Result: {}", self.v);
+            println!("Result: {} with distance {d}", self.v);
         }
 
         let range = (d.abs_diff(distance), d + distance);
@@ -142,6 +143,7 @@ impl BkTree {
         self.root.search(word, d);
     }
 
+    #[allow(dead_code)]
     fn dump(&self) {
         self.root.dump(&0, 0);
     }
